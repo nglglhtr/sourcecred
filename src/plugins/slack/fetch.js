@@ -87,7 +87,7 @@ export class Fetcher {
     return channels;
   }
 
-  async getRequiredDetails(
+  async getRequiredDetails (
     message: any,
     channel: Conversation
   ): Promise<Message> {
@@ -97,8 +97,10 @@ export class Fetcher {
     if (message.blocks) {
       block = message.blocks;
       block.forEach((element) => {
-        for (const el of element.elements) {
-          innerElements = el.elements;
+        if (!element.is_deleted && element.elements) {
+          for (const el of element.elements) {
+            innerElements = el.elements;
+          }
         }
       });
       if (innerElements) {
@@ -120,6 +122,7 @@ export class Fetcher {
       reactions: message.reactions ? message.reactions : [],
       mentions: mentionedUsers,
     };
+    // console.log ('detailed message:', detailedMessage);
     return detailedMessage;
   }
 
@@ -161,7 +164,9 @@ export class Fetcher {
           cursor,
         });
       } catch (error) {
-        throw new Error("Error in fetching messages");
+        console.log ("error here!: ", error)
+        throw new Error("Error in fetching messages")
+
       }
       const userMessages = response.messages.filter(
         (message) => !message.bot_id

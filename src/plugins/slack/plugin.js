@@ -34,24 +34,35 @@ async function loadConfig(
   return loadJson(path, parser);
 }
 
+const TOKEN_ENV_VAR_NAME = "SOURCECRED_SLACK_TOKEN";
+
+function getTokenFromEnv(): DiscordToken {
+  const rawToken = process.env[TOKEN_ENV_VAR_NAME];
+  if (rawToken == null) {
+    throw new Error(`No Discord token provided: set ${TOKEN_ENV_VAR_NAME}`);
+  }
+  return rawToken;
+}
+
 export class SlackPlugin implements Plugin {
   id: PluginId = pluginIdFromString("sourcecred/slack");
-  
+
   declaration(): PluginDeclaration {
     return declaration;
   }
-  
+
   async load(
     ctx: PluginDirectoryContext,
     reporter: TaskReporter
   ): Promise<void> {
-    const {token, name} = await loadConfig(ctx);
+    const token = getTokenFromEnv();
+    const {name} = await loadConfig(ctx);
     const fetcher = new Fetcher(token);
     const repo = await repository(ctx);
     const mirror = new Mirror(repo, fetcher, token, name);
     await mirror.update(reporter);
   }
-  
+
   async graph(
     ctx: PluginDirectoryContext,
     rd: ReferenceDetector
@@ -70,7 +81,7 @@ export class SlackPlugin implements Plugin {
     ]);
     return {graph: weightedGraph.graph, weights: combinedWeights};
   }
-  
+
   async referenceDetector(
     _unused_ctx: PluginDirectoryContext
   ): Promise<ReferenceDetector> {
@@ -78,14 +89,14 @@ export class SlackPlugin implements Plugin {
     // (HIGH priority bc ppl hardlink to Slack messages)
     return {addressFromUrl: () => undefined};
   }
-  
+
   async identities(
     ctx: PluginDirectoryContext
   ): Promise<$ReadOnlyArray<IdentityProposal>> {
     const repo = await repository(ctx);
     return createIdentities(repo);
   }
-  
+
 }
 
 async function repository(
@@ -95,4 +106,3 @@ async function repository(
   const db = await new Database(path);
   return new SqliteMirrorRepository(db);
 }
-

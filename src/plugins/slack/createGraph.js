@@ -184,17 +184,17 @@ function mentionsEdge(message: Model.Message, member: Model.User): Edge {
 function repliesEdge(message: Model.Message, reply: Model.Message): Edge {
   const address: EdgeAddressT = EdgeAddress.append(
     messageRepliesEdgeType.prefix,
-    message.channel, 
+    message.channel,
     String(message.authorId),
-    message.id, 
+    message.id,
     reply.channel,
-    String(reply.authorId), 
+    String(reply.authorId),
     reply.id
   );
   return {
-    address, 
-    timestampMs: Number(parseFloat(message.id) * 1000), 
-    src: messageAddress(message), 
+    address,
+    timestampMs: Number(parseFloat(message.id) * 1000),
+    src: messageAddress(message),
     dst: messageAddress(reply)
   };
 }
@@ -216,11 +216,13 @@ export function createGraph(
     // fetch all messages of the channel
     const messages = repo.messages(channel.id);
     for (const message of messages) {
+      // if a message does not have reactions and mentions continue
+      // only the messages which have a reaction
       if (!message.hasReactions && !message.hasMentions) continue;
-      
+
       let hasEdges = false;
       const reactions = repo.reactions(message.channel, message.id);
-      
+
       // add reaction nodes & edges
       for (const reaction of reactions) {
         const reactingMember = memberMap.get(reaction.reactor);
